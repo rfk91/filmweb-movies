@@ -2,18 +2,23 @@ import * as fs from 'fs';
 import * as pptr from 'puppeteer';
 import { asyncForEach } from './async-foreach';
 
-const dir: string = './gen/';
+// Output directory
+const dir: string = './output/';
 
+// URL to parse
 const URL: string =
   'https://www.filmweb.pl/films/search?orderBy=popularity&descending=true';
 
+// Headless Chrome viewport size
 const viewport: pptr.Viewport = {
   width: 800,
   height: 2840,
 };
 
+// Start at N page
 const startPage: number = 1;
 
+// Number of pages to parse
 const pages: number = 100;
 
 interface Movie {
@@ -54,9 +59,11 @@ interface Movie {
           waitUntil: 'networkidle0',
         });
       }
-      await page.screenshot({
-        path: `${dir}page-${i}.png`,
-      });
+
+      // await page.screenshot({
+      //   path: `${dir}page-${i}.png`,
+      // });
+
       const movies = await grabMovies(page);
       allMovies.push(movies);
     }
@@ -87,43 +94,55 @@ interface Movie {
 
 async function grabMovies(page: pptr.Page) {
   const moviesEl = await page.$$('.hits__item');
-
   let movies: Movie[] = [];
 
   await asyncForEach(moviesEl, async (movieEl) => {
+    let poster: string = '';
     const posterEl = await movieEl.$('.filmPreview__poster .poster__image');
-    const posterElProp = await posterEl.getProperty('src');
-    const poster: string = (await posterElProp.jsonValue()) as string;
+    if (posterEl) {
+      const posterElProp = await posterEl.getProperty('src');
+      poster = (await posterElProp.jsonValue()) as string;
+    }
 
+    let title: string = '';
     const titleEl = await movieEl.$('.filmPreview__title');
-    const titleElProp = await titleEl.getProperty('innerText');
-    const title: string = (await titleElProp.jsonValue()) as string;
+    if (titleEl) {
+      const titleElProp = await titleEl.getProperty('innerText');
+      title = (await titleElProp.jsonValue()) as string;
+    }
 
     // Log movie titles as we go...
     console.log(title);
 
-    let originalTitle: string;
+    let originalTitle: string = title;
     const originalTitleEl = await movieEl.$('.filmPreview__originalTitle');
-    if (!originalTitleEl) {
-      originalTitle = title;
-    } else {
+    if (originalTitleEl) {
       const originalTitleElProp = await originalTitleEl.getProperty(
         'innerText'
       );
       originalTitle = (await originalTitleElProp.jsonValue()) as string;
     }
 
+    let description: string = '';
     const descriptionEl = await movieEl.$('.filmPreview__description > p');
-    const descriptionElProp = await descriptionEl.getProperty('innerText');
-    const description: string = (await descriptionElProp.jsonValue()) as string;
+    if (descriptionEl) {
+      const descriptionElProp = await descriptionEl.getProperty('innerText');
+      description = (await descriptionElProp.jsonValue()) as string;
+    }
 
+    let rate: string = '';
     const rateEl = await movieEl.$('.rateBox__rate');
-    const rateElProp = await rateEl.getProperty('innerText');
-    const rate: string = (await rateElProp.jsonValue()) as string;
+    if (rateEl) {
+      const rateElProp = await rateEl.getProperty('innerText');
+      rate = (await rateElProp.jsonValue()) as string;
+    }
 
+    let year: string = '';
     const yearEl = await movieEl.$('.filmPreview__year');
-    const yearElProp = await yearEl.getProperty('innerText');
-    const year: string = (await yearElProp.jsonValue()) as string;
+    if (yearEl) {
+      const yearElProp = await yearEl.getProperty('innerText');
+      year = (await yearElProp.jsonValue()) as string;
+    }
 
     movies.push({
       poster,
